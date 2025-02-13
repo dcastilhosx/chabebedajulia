@@ -126,6 +126,13 @@ const Gifts = () => {
     });
   };
 
+  // Função auxiliar para verificar se um tipo de presente já foi escolhido
+  const isGiftTypeChosen = (gift: string) => {
+    // Remove a parte "+ 01 pct de fralda (P, M ou G)" para comparação
+    const giftType = gift.split("+")[0].trim();
+    return chosenGifts.some(chosen => chosen.split("+")[0].trim() === giftType);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-purple-50 p-4">
       <motion.div
@@ -139,30 +146,42 @@ const Gifts = () => {
             Escolha um presente
           </h2>
           <div className="space-y-4 max-h-[60vh] overflow-y-auto p-4">
-            {gifts.map((gift, index) => (
-              <motion.div
-                key={index}
-                whileHover={{ scale: 1.01 }}
-                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50"
-              >
-                <Checkbox
-                  id={`gift-${index}`}
-                  checked={selectedGift === gift}
-                  disabled={chosenGifts.includes(gift)}
-                  onCheckedChange={() => setSelectedGift(gift)}
-                />
-                <label
-                  htmlFor={`gift-${index}`}
-                  className={`flex-1 cursor-pointer ${
-                    chosenGifts.includes(gift)
-                      ? "line-through text-gray-400"
-                      : "text-gray-700"
-                  }`}
+            {gifts.map((gift, index) => {
+              const giftType = gift.split("+")[0].trim();
+              const isChosen = isGiftTypeChosen(gift);
+              const isSelected = selectedGift === gift;
+
+              return (
+                <motion.div
+                  key={index}
+                  whileHover={{ scale: 1.01 }}
+                  className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50"
                 >
-                  {gift}
-                </label>
-              </motion.div>
-            ))}
+                  <Checkbox
+                    id={`gift-${index}`}
+                    checked={isSelected}
+                    disabled={isChosen && !isSelected}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedGift(gift);
+                      } else {
+                        setSelectedGift("");
+                      }
+                    }}
+                  />
+                  <label
+                    htmlFor={`gift-${index}`}
+                    className={`flex-1 cursor-pointer ${
+                      isChosen && !isSelected
+                        ? "line-through text-gray-400"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    {gift}
+                  </label>
+                </motion.div>
+              );
+            })}
           </div>
           <div className="mt-6">
             <Button
