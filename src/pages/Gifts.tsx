@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -126,11 +125,9 @@ const Gifts = () => {
     });
   };
 
-  // Função auxiliar para verificar se um tipo de presente já foi escolhido
-  const isGiftTypeChosen = (gift: string) => {
-    // Remove a parte "+ 01 pct de fralda (P, M ou G)" para comparação
-    const giftType = gift.split("+")[0].trim();
-    return chosenGifts.some(chosen => chosen.split("+")[0].trim() === giftType);
+  // Função auxiliar para verificar se um presente específico já foi escolhido
+  const isGiftChosen = (gift: string) => {
+    return chosenGifts.includes(gift);
   };
 
   return (
@@ -147,8 +144,7 @@ const Gifts = () => {
           </h2>
           <div className="space-y-4 max-h-[60vh] overflow-y-auto p-4">
             {gifts.map((gift, index) => {
-              const giftType = gift.split("+")[0].trim();
-              const isChosen = isGiftTypeChosen(gift);
+              const isChosen = isGiftChosen(gift);
               const isSelected = selectedGift === gift;
 
               return (
