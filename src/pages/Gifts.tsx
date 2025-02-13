@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -125,9 +126,15 @@ const Gifts = () => {
     });
   };
 
-  // Função auxiliar para verificar se um presente específico já foi escolhido
-  const isGiftChosen = (gift: string) => {
-    return chosenGifts.includes(gift);
+  // Função para extrair o nome base do presente (sem a parte do pacote de fralda)
+  const getGiftBaseName = (gift: string) => {
+    return gift.split(" + ")[0];
+  };
+
+  // Função para verificar se já existe um presente similar escolhido
+  const isSimilarGiftChosen = (gift: string) => {
+    const giftBaseName = getGiftBaseName(gift);
+    return chosenGifts.some(chosenGift => getGiftBaseName(chosenGift) === giftBaseName);
   };
 
   return (
@@ -144,7 +151,7 @@ const Gifts = () => {
           </h2>
           <div className="space-y-4 max-h-[60vh] overflow-y-auto p-4">
             {gifts.map((gift, index) => {
-              const isChosen = isGiftChosen(gift);
+              const isSimilarChosen = isSimilarGiftChosen(gift);
               const isSelected = selectedGift === gift;
 
               return (
@@ -156,7 +163,7 @@ const Gifts = () => {
                   <Checkbox
                     id={`gift-${index}`}
                     checked={isSelected}
-                    disabled={isChosen && !isSelected}
+                    disabled={isSimilarChosen && !isSelected}
                     onCheckedChange={(checked) => {
                       if (checked) {
                         setSelectedGift(gift);
@@ -168,7 +175,7 @@ const Gifts = () => {
                   <label
                     htmlFor={`gift-${index}`}
                     className={`flex-1 cursor-pointer ${
-                      isChosen && !isSelected
+                      isSimilarChosen && !isSelected
                         ? "line-through text-gray-400"
                         : "text-gray-700"
                     }`}
