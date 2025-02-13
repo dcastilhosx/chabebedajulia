@@ -1,7 +1,7 @@
 
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { baby } from "lucide-react";
+import { Baby } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Index = () => {
@@ -45,7 +45,7 @@ const Index = () => {
             className="absolute -bottom-6 left-1/2 transform -translate-x-1/2"
           >
             <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center shadow-lg">
-              <baby className="text-white" size={24} />
+              <Baby className="text-white" size={24} />
             </div>
           </motion.div>
         </div>
