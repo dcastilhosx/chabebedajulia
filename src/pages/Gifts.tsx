@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/lib/supabase";
+import { useNavigate } from "react-router-dom";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -82,13 +84,25 @@ const Gifts = () => {
   const [selectedGift, setSelectedGift] = useState("");
   const [chosenGifts, setChosenGifts] = useState<string[]>([]);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const saved = localStorage.getItem("chosenGifts");
-    if (saved) {
-      setChosenGifts(JSON.parse(saved));
-    }
+    const fetchChosenGifts = async () => {
+      const { data, error } = await supabase
+        .from('chosen_gifts')
+        .select('gift');
+
+      if (error) {
+        console.error('Erro ao buscar presentes:', error);
+        return;
+      }
+
+      setChosenGifts(data.map(item => item.gift));
+    };
+
+    fetchChosenGifts();
   }, []);
 
   const handleGiftConfirmation = () => {
@@ -100,33 +114,61 @@ const Gifts = () => {
       });
       return;
     }
+    
+    const participantId = localStorage.getItem("participant_id");
+    if (!participantId) {
+      toast({
+        title: "Sessão expirada",
+        description: "Por favor, faça seu cadastro novamente.",
+        variant: "destructive",
+      });
+      navigate("/participant");
+      return;
+    }
+
     setShowConfirm(true);
   };
 
-  const confirmGift = () => {
-    const participant = JSON.parse(localStorage.getItem("participant") || "{}");
-    const giftData = {
-      gift: selectedGift,
-      participant: participant.name,
-      companion: participant.companion,
-    };
-    
-    const updatedGifts = [...chosenGifts, selectedGift];
-    localStorage.setItem("chosenGifts", JSON.stringify(updatedGifts));
-    
-    const gifts = JSON.parse(localStorage.getItem("giftsList") || "[]");
-    localStorage.setItem("giftsList", JSON.stringify([...gifts, giftData]));
-    
-    setChosenGifts(updatedGifts);
-    setShowConfirm(false);
-    
-    toast({
-      title: "Presente confirmado!",
-      description: "Obrigado por participar do chá de bebê da Julia!",
-    });
+  const confirmGift = async () => {
+    const participantId = localStorage.getItem("participant_id");
+    if (!participantId) {
+      navigate("/participant");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from('chosen_gifts')
+        .insert([
+          {
+            gift: selectedGift,
+            participant_id: participantId
+          }
+        ]);
+
+      if (error) throw error;
+
+      setChosenGifts(prev => [...prev, selectedGift]);
+      setShowConfirm(false);
+      
+      toast({
+        title: "Presente confirmado!",
+        description: "Obrigado por participar do chá de bebê da Julia!",
+      });
+    } catch (error) {
+      console.error('Erro ao salvar presente:', error);
+      toast({
+        title: "Erro ao confirmar presente",
+        description: "Ocorreu um erro ao salvar sua escolha. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Função para extrair o nome base do presente (sem a parte do pacote de fralda)
+  // Função para extrair o nome base do presente
   const getGiftBaseName = (gift: string) => {
     return gift.split(" + ")[0];
   };
@@ -190,8 +232,9 @@ const Gifts = () => {
             <Button
               onClick={handleGiftConfirmation}
               className="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white py-2 rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all duration-300"
+              disabled={isLoading}
             >
-              Confirmar Presente
+              {isLoading ? "Confirmando..." : "Confirmar Presente"}
             </Button>
           </div>
         </Card>
@@ -209,7 +252,9 @@ const Gifts = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmGift}>Confirmar</AlertDialogAction>
+            <AlertDialogAction onClick={confirmGift} disabled={isLoading}>
+              {isLoading ? "Confirmando..." : "Confirmar"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -6,14 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/lib/supabase";
 
 const Participant = () => {
   const [name, setName] = useState("");
   const [companion, setCompanion] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       toast({
@@ -24,11 +26,29 @@ const Participant = () => {
       return;
     }
 
-    localStorage.setItem(
-      "participant",
-      JSON.stringify({ name, companion: companion.trim() })
-    );
-    navigate("/gifts");
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('participants')
+        .insert([{ name: name.trim(), companion: companion.trim() }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Salvar ID do participante para uso posterior
+      localStorage.setItem("participant_id", data.id);
+      navigate("/gifts");
+    } catch (error) {
+      toast({
+        title: "Erro ao salvar participante",
+        description: "Ocorreu um erro ao salvar seus dados. Tente novamente.",
+        variant: "destructive",
+      });
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -54,6 +74,7 @@ const Participant = () => {
                 onChange={(e) => setName(e.target.value)}
                 className="w-full"
                 placeholder="Digite seu nome"
+                disabled={isLoading}
               />
             </div>
             <div>
@@ -66,13 +87,15 @@ const Participant = () => {
                 onChange={(e) => setCompanion(e.target.value)}
                 className="w-full"
                 placeholder="Digite o nome do acompanhante"
+                disabled={isLoading}
               />
             </div>
             <Button
               type="submit"
               className="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white py-2 rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all duration-300"
+              disabled={isLoading}
             >
-              Escolher Presente
+              {isLoading ? "Salvando..." : "Escolher Presente"}
             </Button>
           </form>
         </Card>
